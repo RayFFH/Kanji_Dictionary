@@ -1,0 +1,938 @@
+// public/script.js
+const currentPage = window.location.pathname;
+
+// Add a condition to exclude the WaniKani page
+if (currentPage !== '/wanikani.html') {
+    // Your general code goes here
+    console.log('Running script on non-WaniKani page');
+    // ...
+
+    // Example: Call functions or add general code
+    // getRandomKanji();
+} else {
+    console.log('Script not running on WaniKani page');
+}
+
+
+// document.addEventListener('DOMContentLoaded', function () {
+//     updateLogoutButtonVisibility();
+//     displayLoadingMessage(11);
+//     // ... (other initialization code)
+// });
+
+
+async function getCurrentUser() {
+    try {
+        const username = localStorage.getItem('current_user');
+        if (username) {
+            console.log('User found:', username);
+
+            // Make a GET request to the server to get user information
+            const response = await fetch(`/getUser?username=${username}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const userJSON = await response.json();
+                console.log('User JSON:', userJSON);
+                // Hide the account and login boxes
+                //hideAccountAndLoginBoxes();
+
+                // Set the current user by username
+                setCurrentUser(username);
+
+                // Display a welcome message
+                //displayWelcomeMessage(username); 
+                document.getElementById('username-card-display').innerText = username;   
+                const cardleveltext = document.getElementById('card-level-text');
+                cardleveltext.classList.remove('hidden')
+                //showLogoutButton();
+
+                return username;
+            } else {
+                console.error('Failed to fetch user information:', response.statusText);
+                return null;
+            }
+        } else {
+            console.log('No user found.');
+            //hideLogoutButton();
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching user information:', error);
+        return null;
+    }
+}
+
+
+//document.addEventListener('DOMContentLoaded', getTokyoWeather);
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Check if the user is already logged in
+    //checkLoggedInUser();
+
+    // generateRandomKanji();
+    getRandomKanji();
+
+    getKnownKanji();
+    
+
+
+});
+
+async function getTokyoWeather() {
+    try {
+        const response = await fetch('/getWeather');
+        const data = await response.json();
+
+        console.log('Weather Data:', data);
+
+        var weatherInfo = 'Temperature: ' + data.temperature.toFixed(2) + '°C, ' +
+                          'Description: ' + data.description;
+        document.getElementById('weather').innerText = weatherInfo;
+    } catch (error) {
+        console.error('Error fetching weather data:', error);
+        document.getElementById('weather').innerText = 'Error fetching weather data. Please try again.';
+    }
+}
+async function getRandomKanji() {
+    try {
+        const response = await fetch('/getRandomKanji');
+        const data = await response.json();
+        console.log('Random Kanji:', data);
+        console.log('Random Kanji:', data.random_kanji);
+        console.log('Random Sentence:', data.random_sentence);
+            // Replace 'yourRandomKanjiVariable' with the actual variable storing the random kanji
+        const randomKanji = data.random_kanji
+        //fetchAndDisplayNHKNews(randomKanji);
+        
+        
+
+
+        // Assuming you have an element with the ID 'random-kanji' in your HTML
+        const randomKanjiElement = document.getElementById('random-kanji');
+        const randomSentenceElement = document.getElementById('random-sentence');
+
+        // Display the fetched random kanji on the HTML element
+        randomKanjiElement.setAttribute('data-kanji-info', JSON.stringify(data.random_kanji));
+
+        randomKanjiElement.innerText = data.random_kanji[1];
+        randomSentenceElement.innerText = data.random_sentence;
+
+        await getKnownKanji();
+    } catch (error) {
+        console.error('Error fetching random kanji data:', error);
+        // Handle the error
+    }
+}
+// Add the rest of your client-side JavaScript code here
+// ...
+async function checkLoggedInUser() {
+    const currentUser = await getCurrentUser();
+    console.log(currentUser)
+    if (currentUser !== null && currentUser !== undefined) {
+        console.log("This is the current user", currentUser)
+        // Hide the account and login boxes
+        hideAccountAndLoginBoxes();
+
+        // Display a welcome message
+        displayWelcomeMessage(currentUser.username);
+        showLogoutButton(); // Show logout button if a user is logged in
+        } else {
+        hideLogoutButton();
+    }
+    updateLogoutButtonVisibility();
+}
+
+function generateUniqueId() {
+    const timestamp = new Date().getTime();
+    const randomNum = Math.floor(Math.random() * 1000); // You can adjust the range as needed
+    return `${timestamp}_${randomNum}`;
+}
+
+function loginSuccessful() {
+    // Show the hidden elements
+    document.getElementById('level-text').classList.remove('hidden');
+    document.getElementById('buttons-container').classList.remove('hidden');
+    // Other login-related logic
+}
+
+
+// function storeUser(user) {
+
+//     fetch('http://localhost:3000/api/users', {
+//       method: 'POST',
+//       headers: {
+//          'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({ user.username, password }),
+//    })
+//       .then(response => response.json())
+//       .then(data => {
+//          console.log(data);
+//          alert('User registered successfully!');
+//       })
+//       .catch(error => {
+//          console.error('Error:', error);
+//          alert('Error registering user. Please try again.');
+//       });
+// });
+
+//     try {
+//         const response = await fetch('/storeUser');
+//         const data = await response.json();
+//         console.log('Stored User:', data.user);
+
+//     } catch (error) {
+//         console.error('Error getting the user data:', error);
+//         // Handle the error
+//     }
+//     // Generate a unique user ID
+//     //const userId = generateUniqueId();
+    
+//     // Attach the user ID to the user object
+//     // user.id = userId;
+
+//     // // Store the user in local storage using the user ID as the key
+//     // localStorage.setItem(userId, JSON.stringify(user));
+
+//     // Set the current user in local storage
+//     setCurrentUser(userId);
+// }
+
+async function storeUser(username, password) {
+    try {
+        const response = await fetch('http://localhost:3000/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Stored User:', data.user);
+        } else {
+            console.error('Failed to store user:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error getting the user data:', error);
+        // Handle the error
+    }
+}
+
+function createAccount() {
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    if (!usernameInput.value || !passwordInput.value) {
+        alert('Username and password are required.');
+        return;
+    }
+
+    // Check if the user already exists
+    const existingUser = getUserByUsername(usernameInput.value);
+    if (existingUser) {
+        alert('User already exists. Please choose a different username.');
+        return;
+    }
+    
+    const newUser = {
+        id: generateUniqueId(),
+        username: usernameInput.value,
+        password: passwordInput.value,
+        recognizedKanji: [],
+    };
+
+    // Store the user in local storage
+    storeUser(usernameInput.value, passwordInput.value);
+
+    // Set the current user by user ID
+    setCurrentUser(newUser.username);
+
+    // Hide the account and login boxes
+    hideAccountAndLoginBoxes();
+
+    // Display a welcome message
+    displayWelcomeMessage(newUser.username);
+}
+
+
+// Add the rest of your functions here
+// ...
+async function login() {
+    const loginUsernameInput = document.getElementById('login-username');
+    const loginPasswordInput = document.getElementById('login-password');
+
+    // Basic validation
+    if (!loginUsernameInput.value || !loginPasswordInput.value) {
+        alert('Username and password are required.');
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3000/getUserLogin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: loginUsernameInput.value,
+                password: loginPasswordInput.value,
+            }),
+        });
+
+        if (response.ok) {
+            // Successfully logged in
+            const data = await response.json();
+            console.log('Login successful:', data.message);
+
+            // Hide the account and login boxes
+            hideAccountAndLoginBoxes();
+
+            // Set the current user by username
+            setCurrentUser(loginUsernameInput.value);
+
+            // Display a welcome message
+            displayWelcomeMessage(loginUsernameInput.value);
+
+            loginSuccessful()
+        } else if (response.status === 401) {
+            // Invalid username or password
+            alert('Invalid username or password. Please try again.');
+        } else {
+            console.error('Failed to login:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error during login:', error);
+    }
+}
+function hideAccountAndLoginBoxes() {
+    const accountContainer = document.getElementById('account-container');
+    const loginContainer = document.getElementById('login-container');
+
+    // Hide both containers
+    accountContainer.style.display = 'none';
+    loginContainer.style.display = 'none';
+}
+
+// Function to display a welcome message
+function displayWelcomeMessage(username) {
+    const usernameDisplay = document.getElementById('username-display');
+    usernameDisplay.textContent = 'Welcome, ' + username;
+    usernameDisplay.style.display = 'block';
+}
+function getUserByUsername(username) {
+    const userJSON = localStorage.getItem(username);
+    return userJSON ? JSON.parse(userJSON) : null;
+}
+
+
+function setCurrentUser(username) {
+    localStorage.setItem('current_user', username);
+}
+
+function logoutSuccessful() {
+    // Hide the elements
+    document.getElementById('level-text').classList.add('hidden');
+    document.getElementById('buttons-container').classList.add('hidden');
+    // Other logout-related logic
+}
+function logout() {
+    // Clear the current user from local storage
+    localStorage.removeItem('current_user');
+    window.location.href = '/';
+
+    // Optionally, redirect to the login or home page
+    // window.location.href = '/login'; // Change the URL accordingly
+
+    // Update the UI or perform any other necessary actions
+    console.log('User logged out');
+    logoutSuccessful()
+}
+
+// function generateRandomKanji() {
+//     const kanjiElement = document.getElementById('random-kanji');
+
+//     // Fetch a random kanji from the Jisho API
+//     fetch('https://jisho.org/api/v1/search/words?keyword=%23kanji')
+//         .then(response => response.json())
+//         .then(data => {
+//             // Extract kanji information from the API response
+//             const kanjiList = data.data.map(entry => entry.japanese[0].word);
+
+//             // Get a random index from the kanjiList array
+//             const randomIndex = Math.floor(Math.random() * kanjiList.length);
+
+//             // Display the random kanji
+//             kanjiElement.textContent = kanjiList[randomIndex];
+//         })
+//         .catch(error => {
+//             console.error('Error fetching kanji data:', error);
+//             kanjiElement.textContent = 'Error fetching kanji data. Please try again.';
+//         });
+// }
+async function saveKnownKanji(kanji) {
+    try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+            console.log('yooooo');
+            // Make a request to the server to save known kanji
+            const response = await fetch('/saveKnownKanji', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: currentUser,  // Use the actual user ID here
+                    kanji: kanji,
+                }),
+            });
+
+            if (response.ok) {
+                console.log('Known kanji saved successfully.');
+            } else {
+                console.error('Failed to save known kanji:', response.statusText);
+            }
+        } else {
+            alert('Please log in to save known kanji.');
+        }
+    } catch (error) {
+        console.error('Error saving known kanji:', error);
+    }
+}
+
+async function getKnownKanji() {
+    try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+            // Make a request to the server to fetch known kanji
+            console.log("current user now: " + currentUser)
+            const response = await fetch(`/getKnownKanji?user_id=${currentUser}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                console.log("Response was ok")
+                const knownKanjiList = await response.json();
+            
+                console.log(knownKanjiList)
+                // Extract an array of kanji from the list of objects
+                const flattenedList = knownKanjiList.flat();
+
+                // Log the flattened list for debugging
+                console.log('flattenedList:', flattenedList);
+
+                updateLevel(flattenedList.length);
+
+                knownKanjiCount = flattenedList.length;
+            
+                // Assuming you have an element with the ID 'known-kanji-list' in your HTML
+                const knownKanjiListElement = document.getElementById('known-kanji-list');
+            
+                // Clear the existing content
+                knownKanjiListElement.innerHTML = '';
+            
+                // Assuming you want to display 4 kanji per row
+                const kanjiPerRow = 4;
+
+                // Calculate the number of empty columns needed to make the last row aligned
+                const emptyColumns = kanjiPerRow - (flattenedList.length % kanjiPerRow);
+            
+                // Create a row container using Bootstrap 'row' class
+                let rowContainer;
+            
+                for (let i = 0; i < flattenedList.length + emptyColumns; i++) {
+                    // Start a new row after every 'kanjiPerRow' items
+                    if (i % kanjiPerRow === 0) {
+                        rowContainer = document.createElement('div');
+                        rowContainer.className = 'row';
+            
+                        knownKanjiListElement.appendChild(rowContainer);
+                    }
+            
+                    // Create a column using Bootstrap 'col' class
+                    const colElement = document.createElement('div');
+                    colElement.className = 'col';
+            
+                    // If the current index is within the range of actual kanji, create a list item
+                    if (i < flattenedList.length) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = flattenedList[i];
+            
+                        // Append the list item to the column
+                        colElement.appendChild(listItem);
+                    }
+            
+                    // Append the column to the row
+                    rowContainer.appendChild(colElement);
+                }
+            } else {
+                console.error('Failed to fetch known kanji:', response.statusText);
+            }
+
+        }
+    } catch (error) {
+        console.error('Error fetching known kanji:', error);
+    }
+}
+
+async function recognizeKanji() {
+    try {
+        // Assuming you have an element with the ID 'random-kanji' in your HTML
+        //displayLoadingMessage(11);
+        //displayLoadingMessage(11);
+        const randomKanjiElement = document.getElementById('random-kanji');
+
+        // Get the currently displayed random kanji
+        const randomKanji = randomKanjiElement.textContent;
+
+        const kanjiInfo = JSON.parse(randomKanjiElement.getAttribute('data-kanji-info'));
+
+        // Get the current user
+        const currentUser = await getCurrentUser();
+
+        console.log(randomKanji)
+        console.log(kanjiInfo + "kanjiinfo")
+        console.log('Current User:', currentUser);
+        
+        const progressBar = document.getElementById('level-progress');
+
+        // Get the current progress value from the progress bar
+        let progress = parseInt(progressBar.style.width) || 0;
+
+        // Increment the progress by 10% for each recognized kanji
+        progress += 10;
+
+        // Ensure the progress does not exceed 100%
+        progress = Math.min(progress, 101);
+
+        // Update the progress bar width
+        progressBar.style.width = `${progress}%`;
+
+        // If the level has increased, reset the progress bar
+        if (progress > 100) {
+            // Reset the progress bar
+            progress = 0;
+            progressBar.style.width = '0%';
+        }
+
+
+        if (currentUser) {
+            // Make a request to the server to recognize and save known kanji
+            console.log('Request Payload:', JSON.stringify({ user_id: currentUser, random_kanji: kanjiInfo }));
+
+
+            //Fetch a new random kanji
+            await getRandomKanji();
+
+            // Get the newly fetched random kanji
+            const newRandomKanji = randomKanjiElement.textContent;
+
+
+            const response = await fetch('/recognizeKanji', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: currentUser,
+                    random_kanji: kanjiInfo,
+                }),
+            });
+            console.log('Fetch Response:', response);
+
+            if (response.ok) {
+                console.log('Recognized kanji and updated known kanji list.');
+                // Fetch and display the updated list of known kanji
+                await getKnownKanji();
+                //await fetchAndDisplayNHKNews(randomKanji);
+                console.log("Done")
+            } else {
+                console.error('Failed to recognize kanji:', response.statusText);
+            }
+        } else {
+            alert('Please log in to recognize kanji.');
+        }
+
+    } catch (error) {
+        console.error('Error recognizing kanji:', error);
+    }
+}
+
+// Function to handle non-recognition of kanji
+// async function dontRecognizeKanji() {
+//     hideAccountAndLoginBoxes();
+    
+// }
+
+async function dontRecognizeKanji() {
+    //location.reload(); // Refresh the page
+    await getRandomKanji();
+    //hideAccountAndLoginBoxes();
+}
+
+function updateLevel(knownKanjiCount) {
+    // Your logic to update the level based on the knownKanjiCount
+    // Example: Update the level every 10 known kanji
+    const newLevel = Math.floor(knownKanjiCount / 10) + 1;
+    console.log('New Level:', newLevel);
+
+    // Update the level text on the UI
+    const levelElement = document.getElementById('level');
+    if (levelElement) {
+        levelElement.textContent = newLevel;
+    }
+}
+
+async function showLogoutButton() {
+    document.getElementById('level-text').classList.remove('hidden');
+    document.getElementById('buttons-container').classList.remove('hidden');
+}
+
+// Function to hide the logout button and related elements
+async function hideLogoutButton() {
+    document.getElementById('level-text').classList.add('hidden');
+    document.getElementById('buttons-container').classList.add('hidden');
+}
+
+async function updateLogoutButtonVisibility() {
+    console.log("Current UserYOOOOOOOOOOO ITS HEREEE Status:");
+    const userCardContainer = document.getElementById("user-card-container");
+    const leveltext = document.getElementById('level-text');
+    const logoutButton = document.getElementById('logoutButton');
+    const loginButton = document.getElementById('loginButton');
+    const wanikaniConnectButton = document.getElementById('wanikaniConnectButton');
+    const createAccountButton = document.getElementById('createAccountButton');
+    const currentuser = await getCurrentUser();
+    if (currentuser) {
+        logoutButton.classList.remove('hidden');
+        loginButton.classList.add('hidden');
+        createAccountButton.classList.add('hidden');
+        //leveltext.classList.remove('hidden')
+        userCardContainer.classList.remove("hidden");
+        wanikaniConnectButton.classList.remove('hidden');
+    } else {
+        logoutButton.classList.add('hidden');
+        loginButton.classList.remove('hidden');
+        createAccountButton.classList.remove('hidden');
+        userCardContainer.classList.add("hidden");
+        wanikaniConnectButton.classList.add('hidden');
+    }
+}
+// function displayNHKNews(newsData) {
+//     const nhkNewsElement = document.getElementById('nhk-news');
+
+//     // Display the NHK news data
+//     nhkNewsElement.textContent = newsData;
+// }
+
+// async function displayNHKNews(newsText, knownKanjiList) {
+//     const nhkNewsElement = document.getElementById('nhk-news');
+
+//     // Clear the existing content
+//     nhkNewsElement.innerHTML = '';
+
+//     // Split the news text into words
+//     const newsWords = newsText.split(' ');
+
+//     // Check if screenKanji is available in local storage
+//     const storedScreenKanji = localStorage.getItem('screenKanji');
+
+//     // Use screenKanji from local storage if available; otherwise, use an empty array
+//     const screenKanji = storedScreenKanji ? JSON.parse(storedScreenKanji) : [];
+
+//     // Create a new span element for each word
+//     for (const word of newsWords) {
+//         const wordSpan = document.createElement('span');
+
+//         // Split the word into characters
+//         const wordCharacters = word.split('');
+
+//         // Create a new span element for each character in the word
+//         for (const character of wordCharacters) {
+//             const span = document.createElement('span');
+//             span.textContent = character;
+
+//             // Check if the character is in the WaniKani kanji list
+//             if (screenKanji && Array.isArray(screenKanji) && screenKanji.includes(character)) {
+//                 span.classList.add('highlight'); // Add a CSS class for highlighting
+//             }
+
+//             // Check if the character is in the known kanji list
+//             if (knownKanjiList && Array.isArray(knownKanjiList) && knownKanjiList.includes(character)) {
+//                 span.classList.add('highlight-known'); // Add a different CSS class for highlighting known kanji
+//             }
+
+//             // Append the span element to the word span
+//             wordSpan.appendChild(span);
+//         }
+
+//         // Add a space between words
+//         const spaceSpan = document.createElement('span');
+//         spaceSpan.textContent = ' ';
+
+//         // Append the word span and space span to the NHK news element
+//         nhkNewsElement.appendChild(wordSpan);
+//         nhkNewsElement.appendChild(spaceSpan);
+//     }
+// }
+
+// // Function to fetch and display NHK news
+// async function fetchAndDisplayNHKNews(randomKanji) {
+
+//     try {
+//         // Make a GET request to the server to get NHK news based on the random kanji
+//         const knownKanjiList = await getKnownKanji();
+//         console.log("HERE" + randomKanji)
+//         const randomKan = randomKanji[1];
+//         console.log("YES" + randomKan)
+//         const response = await fetch(`/getNHKNews?randomKanji=${randomKan}`, {
+//             method: 'GET',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//         });
+
+//         if (response.ok) {
+//             // If the response is successful, parse the JSON data
+//             const newsData = await response.json();
+
+//             // Log the received news data for debugging
+//             console.log('Received NHK news data:', newsData);
+
+//             // Check if the NHK news story is empty, indicating no news found
+//             if (newsData.nhk_news_story === '') {
+//                 console.log('No NHK news found.');
+//                 // Handle this case as needed, e.g., display a message to the user
+//             } else {
+//                 // Display NHK news at the bottom of the page
+//                 displayNHKNews(newsData.article_text,knownKanjiList);
+//                 console.log('Displayed NHK news successfully.');
+//             }
+//         } else {
+//             // If the response is not successful, log the error
+//             console.error('Failed to fetch NHK news:', response.statusText);
+//         }
+//     } catch (error) {
+//         // Handle any errors that occur during the fetch operation
+//         console.error('Error fetching NHK news:', error);
+//     }
+// }
+
+
+
+// function displayLoadingMessage(durationInSeconds) {
+//     const nhkNewsTitle = document.getElementById('nhk-news');
+
+//     // Set the initial loading message
+//     nhkNewsTitle.textContent = "Your Kanji related NHK News is loading...";
+    
+
+//     // After the specified duration, clear the loading message
+//     setTimeout(() => {
+//         nhkNewsTitle.textContent = "NHK News"; // Replace with your actual NHK News title
+//     }, durationInSeconds * 1000); // Convert seconds to milliseconds
+// }
+
+setInterval(() => {
+    console.log('screenKanji from script.js:', screenKanji);
+    
+}, 10000); // Log every 5 seconds
+
+console.log("YO HERE YO YO :", window.screenKanji);
+
+let screenKanji = null;
+async function fetchLevelData(apiToken) {
+    try {
+    const apiEndpointPath = 'user';
+    const requestHeaders = new Headers({
+        'Wanikani-Revision': '20170710',
+        Authorization: 'Bearer ' + apiToken,
+    });
+    const apiEndpoint = new Request('https://api.wanikani.com/v2/' + apiEndpointPath, {
+        method: 'GET',
+        headers: requestHeaders
+    });
+
+    // Fetch user level data
+    const response = await fetch(apiEndpoint);
+    const responseData = await response.json();
+    console.log("level:", responseData.data.level)
+
+    if (responseData.data && responseData.data.level !== undefined) {
+        const userLevel = responseData.data.level;
+        console.log('User Level:', userLevel);
+
+        // Convert userLevel to a string
+        const levelRequest = userLevel.toString();
+
+        // Fetch level data based on the user's level
+        const levelResponse = await fetch(`/getWanikanilevel?level=${levelRequest}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (levelResponse.ok) {
+            const levelData = await levelResponse.json();
+            console.log('Received level data:', levelData);
+            screenKanji = levelData
+            localStorage.setItem('screenKanji', JSON.stringify(screenKanji));
+
+            console.log('Received level data:', screenKanji);
+            // Handle the received data accordingly
+        } else {
+            console.error('Failed to fetch kanji for level:', levelResponse.statusText);
+        }
+    } else {
+        console.error('Level not found in response data.');
+    }
+    } catch (error) {
+    console.error('Error fetching data:', error);
+    }
+}
+
+// async function saveApiKey() {
+//     const apiToken = document.getElementById('wanikaniApiKey').value;
+//     await fetchLevelData(apiToken);
+// }
+
+
+async function returnToMainMenu() {
+    // Redirect to index.html
+    window.location.href = 'index.html';
+}
+
+
+document.querySelector('.btn-success').addEventListener('click', saveApiKey);
+//document.querySelector('.btn-secondary').addEventListener('click', returnToMainMenu);
+
+// ... (other script functions)
+window.addEventListener('DOMContentLoaded', function() {
+    // Check the current page URL
+    const currentPage = window.location.pathname;
+
+    // Add a condition to exclude the execution of script.js
+    if (currentPage !== '/wanikani.html') {
+        // Create a script element dynamically
+        const scriptElement = document.createElement('script');
+        
+        // Set the source attribute to your script.js file
+        scriptElement.src = 'script.js';
+
+        // Append the script element to the document body
+        document.body.appendChild(scriptElement);
+    }
+});
+
+window.addEventListener('DOMContentLoaded', function() {
+    // Check the current page URL
+    const currentPage = window.location.pathname;
+
+    // Add a condition to exclude the execution of script.js
+    if (currentPage !== '/wanikani.html') {
+        // Retrieve screenKanji from local storage
+        const storedScreenKanji = localStorage.getItem('screenKanji');
+        
+        // Parse the stored screenKanji (assuming it's a JSON object)
+        if (storedScreenKanji) {
+            screenKanji = JSON.parse(storedScreenKanji);
+        }
+
+        // Create a script element dynamically
+        const scriptElement = document.createElement('script');
+                
+        // Set the source attribute to your script.js file
+        scriptElement.src = 'script.js';
+
+        // Append the script element to the document body
+        document.body.appendChild(scriptElement);
+    }
+});
+
+// ... (your other functions)
+
+async function saveApiKey() {
+    const apiToken = document.getElementById('wanikaniApiKey').value;
+    await fetchLevelData(apiToken);
+
+    // Check if screenKanji contains kanji characters
+    if (screenKanji && Array.isArray(screenKanji) && screenKanji.some(character => isKanji(character))) {
+        // Redirect to index.html
+        window.location.href = 'index.html';
+    } else {
+        alert('No kanji characters found in screenKanji. Please try again.');
+    }
+}
+
+function isKanji(character) {
+    // Replace this with your logic to determine if a character is a kanji character
+    // For simplicity, let's assume any character with a Unicode code point greater than 0x4e00 is a kanji character
+    return character.charCodeAt(0) > 0x4e00;
+}
+
+async function returnToMainMenu() {
+    // Redirect to index.html
+    window.location.href = 'index.html';
+}
+
+function handleEnterKey(event) {
+    if (event.key === 'Enter') {
+        // If Enter key is pressed, call saveApiKey function
+        saveApiKey();
+    }
+}
+
+document.querySelector('.btn-success').addEventListener('click', saveApiKey);
+document.querySelector('.btn-secondary').addEventListener('click', returnToMainMenu);
+
+// ... (other script functions)
+window.addEventListener('DOMContentLoaded', function () {
+    // Check the current page URL
+    const currentPage = window.location.pathname;
+
+    // Add a condition to exclude the execution of script.js
+    if (currentPage !== '/wanikani.html') {
+        // Create a script element dynamically
+        const scriptElement = document.createElement('script');
+
+        // Set the source attribute to your script.js file
+        scriptElement.src = 'path/to/script.js';
+
+        // Append the script element to the document body
+        document.body.appendChild(scriptElement);
+    }
+});
+
+
+
+
+// async function saveApiKey() {
+//     const apiToken = document.getElementById('wanikaniApiKey').value;
+//     await fetchLevelData(apiToken);
+
+//     // Once screenKanji is updated, call fetchAndDisplayNHKNews
+//     //fetchAndDisplayNHKNews(screenKanji);
+// }
+// Call the function with a delay of 7 seconds (adjust as needed)
+
+
+// Fetch and display NHK news when the page loads
+
+// Call the function when the page loads to set initial visibility
+
+
+// Add event listeners to the Recognize and Don't Recognize buttons
+
