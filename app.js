@@ -623,7 +623,7 @@ app.get('/getWanikanilevel', async (req, res) => {
 //     }
 // });
 
-const port = process.env.PORT || 3000  // Use the provided port or default to 3001
+const port = process.env.PORT || 10000  // Use the provided port or default to 3001
 async function get_username_by_id(user_id) {
     // Establish a database connection
     const connection = await createDbConnection("kanjidatabaseserver.database.windows.net", "KanjiDatabase", "phoenix", "dsuJDS43280$£$");
