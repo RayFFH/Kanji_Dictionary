@@ -7,6 +7,17 @@
 
     <title>Weather in Tokyo</title>
     <script defer src="script.js"></script>
+    <script src="kuromoji.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/foundation/6.3.1/js/foundation.min.js"></script>
+    <script src="/bower_components/foundation/js/vendor/modernizr.js"></script>
+    <script src="/bower_components/vue/dist/vue.min.js"></script>
+    <script src="/bower_components/foundation/js/vendor/jquery.js"></script>
+    <script src="/bower_components/foundation/js/vendor/fastclick.js"></script>
+    <script src="/bower_components/foundation/js/foundation.min.js"></script>
+    <link rel="stylesheet" href="/bower_components/foundation/css/foundation.css" />
+   
+
 </head>
 <style>
     body {
@@ -325,9 +336,125 @@
                 <!-- NHK News content will be loaded here -->
             </div>
         </div> -->
+        <div id="demo" class="row">
+            <div class="large-12 columns">
+                <div v-show="isLoading" data-alert="" class="alert-box radius">
+                    <div v-text="message"></div>
+                </div>
+
+                <form v-show="!isLoading">
+                    <label>解析対象
+                        <input type="text" placeholder="解析したい文字列を入力してください"
+                               v-model="inputText" />
+                        <input type="text" name="dummy" style="display:none;">
+                    </label>
+
+                    <table v-show="tokens.length" width="100%">
+                        <thead>
+                        <tr>
+                            <th>表層形</th>
+                            <th>品詞</th>
+                            <th>品詞細分類1</th>
+                            <th>品詞細分類2</th>
+                            <th>品詞細分類3</th>
+                            <th>活用型</th>
+                            <th>活用形</th>
+                            <th>基本形</th>
+                            <th>読み</th>
+                            <th>発音</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="token in tokens">
+                            <td>{{token.surface_form}}</td>
+                            <td>{{token.pos}}</td>
+                            <td>{{token.pos_detail_1}}</td>
+                            <td>{{token.pos_detail_2}}</td>
+                            <td>{{token.pos_detail_3}}</td>
+                            <td>{{token.conjugated_type}}</td>
+                            <td>{{token.conjugated_form}}</td>
+                            <td>{{token.basic_form}}</td>
+                            <td>{{token.reading}}</td>
+                            <td>{{token.pronunciation}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <!--
+                    <a href="#" v-on="click: drawGraph" v-show="svgStyle=='hidden'" class="radius button">ラティスを表示する</a>
+                    -->
+
+                    <svg v-bind:style="{ visibility: svgStyle }" width="100%" height="800px">
+                        <g id="lattice" transform="translate(20,20)"></g>
+                    </svg>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
         
 
-
+        <script>
+            var DIC_URL = "/dict/";
+            var tokenizer = null;
+            
+            // Vue.js instance
+            var vm = new Vue({
+                el: "#demo",
+                data: {
+                    inputText: "",
+                    tokens: [],
+                    isLoading: true,
+                    message: "Loading dictionaries ...",
+                    svgStyle: "hidden"
+                },
+                methods: {
+                    tokenize: function () {
+                        if (vm.inputText == "" || tokenizer == null) {
+                            vm.tokens = [];
+                            return;
+                        }
+                        try {
+                            vm.tokens = tokenizer.tokenize(vm.inputText);
+                        } catch (e) {
+                            console.log(e);
+                            vm.tokens = [];
+                        }
+                    }
+                }
+            });
+            
+            // Watch for changes in inputText and tokenize accordingly
+            vm.$watch("inputText", function (value) {
+                vm.svgStyle = "hidden";
+                vm.tokenize();
+            });
+            
+            // Load and prepare tokenizer
+            kuromoji.builder({ dicPath: DIC_URL }).build(function (error, _tokenizer) {
+                if (error != null) {
+                    console.log(error);
+                }
+                tokenizer = _tokenizer;
+            
+                vm.message = "Ready";
+                vm.inputText = "すもももももももものうち";
+                vm.isLoading = false;
+            });
+            </script>
+        
+            <script src="script.js"></script>
+            
+            <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+            <script>
+                $(document).foundation();
+              </script>
+        
     <script src="script.js"></script>
     
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

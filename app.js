@@ -8,7 +8,7 @@ const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const puppeteer = require('puppeteer');
 const { createDbConnection, tableSelect, get_known_kanji, save_known_kanji } = require('./database');
-
+var kuromoji = require("kuromoji")
 var app = express();
 
 app.use(cors());
@@ -726,14 +726,31 @@ async function getNhkArticle(kanji) {
 // Route to get NHK Easy News article
 app.get('/getNHKNews', async (req, res) => {
     try {
-        // Get the kanji from the request parameters
-        const kanji = req.query.randomKanji;
+        // Assuming you have the current kanji available in req.query.randomKanji
+        const currentKanji = req.query.randomKanji;
 
         // Call the function to get the NHK Easy News article
-        const articleText = await getNhkArticle(kanji);
+        const articleText = await getNhkArticle(currentKanji);
 
-        // Return the NHK Easy News article text as JSON
-        res.json({ article_text: articleText });
+        // Tokenize the Japanese article text using Kuromoji
+        kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, tokenizer) => {
+            if (err) {
+                console.error(`Error building Kuromoji tokenizer: ${err.message}`);
+                res.status(500).json({ error: 'Internal Server Error' });
+                return;
+            }
+
+            const tokens = tokenizer.tokenize(articleText);
+
+            // Extract the surface form of each token
+            const surfaceForms = tokens.map(token => token.surface_form);
+
+            // Print the surface forms of tokens
+            console.log(surfaceForms);
+
+            // Return the NHK Easy News article text and surface forms of tokens as JSON
+            res.json({ article_text: articleText, tokens: surfaceForms });
+        });
     } catch (e) {
         console.error(`An error occurred during NHK Easy News retrieval: ${e.message}`);
         res.status(500).json({ error: 'Internal Server Error' });
